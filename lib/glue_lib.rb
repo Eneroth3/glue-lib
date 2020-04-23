@@ -26,7 +26,7 @@ module GlueLib
 
       corners = CORNERS.map { |pt| pt.transform(instance.transformation) }
 
-      # If this face merges with other geometry, everything breaks :( .
+      # REVIEW: If this face merges with other geometry, everything breaks :( .
       # It has to lie loosely in this drawing context though to be able to glue
       # to.
       face = instance.parent.entities.add_face(corners)
