@@ -21,12 +21,7 @@ module GlueLib
     faces = instances.map do |instance|
       instance.definition.behavior.is2d = true # "is2d" = "gluable"
 
-      corners = [
-        Geom::Point3d.new(-1, -1, 0),
-        Geom::Point3d.new(1, -1, 0),
-        Geom::Point3d.new(1, 1, 0),
-        Geom::Point3d.new(-1, 1, 0)
-      ].map { |pt| pt.transform(instance.transformation) }
+      corners = CORNERS.map { |pt| pt.transform(instance.transformation) }
 
       # If this face merges with other geometry, everything breaks :( .
       # It has to lie loosely in this drawing context though to be able to glue
@@ -43,12 +38,8 @@ module GlueLib
     group = instances.first.parent.entities.add_group(faces)
     component = group.to_component
 
-    component.definition = target.definition
-    component.layer = target.layer
-    component.material = target.material
-    component.transformation = target.transformation
+    mimic(component, target)
     target.erase!
-    # TODO: Copy attributes.
     # TODO: Purge temp definition.
   end
 
@@ -61,4 +52,29 @@ module GlueLib
     instance.parent.entities.grep(Sketchup::ComponentInstance)
             .select { |c| c.glued_to == instance }
   end
+
+  # Private
+
+  # Corners for an arbitrary face around origin.
+  CORNERS = [
+    Geom::Point3d.new(-1, 0, 0),
+    Geom::Point3d.new(0, -1, 0),
+    Geom::Point3d.new(1, 0, 0),
+    Geom::Point3d.new(0, 1, 0)
+  ].freeze
+  private_constant :CORNERS
+
+  # Copy component properties over from reference to a target, making target
+  # mimic the reference.
+  #
+  # @param target [Sketchup::ComponentInstance]
+  # @param reference [Sketchup::ComponentInstance]
+  def self.mimic(target, reference)
+    target.definition = reference.definition
+    target.layer = reference.layer
+    target.material = reference.material
+    target.transformation = reference.transformation
+    # TODO: Copy attributes.
+  end
+  private_class_method :mimic
 end
