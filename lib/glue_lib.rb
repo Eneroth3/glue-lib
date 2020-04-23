@@ -37,10 +37,11 @@ module GlueLib
     # gluing to.
     group = instances.first.parent.entities.add_group(faces)
     component = group.to_component
+    temp_definition = component.definition
 
     mimic(component, target)
     target.erase!
-    # TODO: Purge temp definition.
+    erase_definition(temp_definition)
   end
 
   # Get all instances glued to an instance.
@@ -63,6 +64,22 @@ module GlueLib
     Geom::Point3d.new(0, 1, 0)
   ].freeze
   private_constant :CORNERS
+
+  # Erase a single definition.
+  #
+  # @param definition [Sketchup::ComponentDefiniton]
+  def self.erase_definition(definition)
+    if Sketchup.version.to_i >= 20
+      # If I remember correctly the official API for removing a definition
+      # originally caused bugsplats. Only use it in SketchUp 2020+ where the old
+      # workaround may not work as SketchUp now can have empty groups and
+      # components.
+      definition.model.definitions.remove(definition)
+    else
+      definition.entities.clear
+    end
+  end
+  private_class_method :erase_definition
 
   # Copy component properties over from reference to a target, making target
   # mimic the reference.
