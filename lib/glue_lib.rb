@@ -9,28 +9,38 @@ module GlueLib
   # other instances. Due to technical limitations, the persistent ID is lost for
   # the target.
   #
-  # @param instance [Sketchup::ComponentInstance]
+  # @param instances [Sketchup::ComponentInstance,
+  #   Array<Sketchup::ComponentInstance>]
   # @param target [Sketchup::ComponentInstance]
-  def self.glue(instance, target)
-    instance.definition.behavior.is2d = true # "is2d" = "gluable"
+  def self.glue(instances, target)
+    # Wrap in array.
+    instances = [*instances]
 
-    corners = [
-      Geom::Point3d.new(-1, -1, 0),
-      Geom::Point3d.new(1, -1, 0),
-      Geom::Point3d.new(1, 1, 0),
-      Geom::Point3d.new(-1, 1, 0)
-    ].map { |pt| pt.transform(instance.transformation) }
+    faces = instances.map do |instance|
+      instance.definition.behavior.is2d = true # "is2d" = "gluable"
 
-    # If this face merges with other geometry, everything breaks :( .
-    # It has to lie loosely in this drawing context though to be able to glue
-    # to.
-    face = instance.parent.entities.add_face(corners)
+      corners = [
+        Geom::Point3d.new(-1, -1, 0),
+        Geom::Point3d.new(1, -1, 0),
+        Geom::Point3d.new(1, 1, 0),
+        Geom::Point3d.new(-1, 1, 0)
+      ].map { |pt| pt.transform(instance.transformation) }
 
-    # HACK: Glue to temporary face and group existing entities (the face) to be
-    # able to swap it out with a component.
-    # TODO: Carry over any instances already glued to target.
-    instance.glued_to = face
-    group = face.parent.entities.add_group([face])
+      # If this face merges with other geometry, everything breaks :( .
+      # It has to lie loosely in this drawing context though to be able to glue
+      # to.
+      face = instance.parent.entities.add_face(corners)
+
+      # TODO: Carry over any instances already glued to target.
+      instance.glued_to = face
+
+      face
+    end
+
+    # HACK: Make a group from existing geometry to allow the gluing to be
+    # carried over from an entity the API allows gluing to, to one we want
+    # gluing to.
+    group = instances.first.parent.entities.add_group(faces)
     component = group.to_component
 
     component.definition = target.definition
