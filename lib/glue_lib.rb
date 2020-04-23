@@ -9,6 +9,9 @@ module GlueLib
   # other instances. Due to technical limitations, the persistent ID is lost for
   # the target.
   #
+  # @note Due to the workaround/hack used, this method can crash SketchUp if
+  #   the components are not in the active drawing context.
+  #
   # @param instances [Sketchup::ComponentInstance,
   #   Array<Sketchup::ComponentInstance>]
   # @param target [Sketchup::ComponentInstance]
