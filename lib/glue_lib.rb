@@ -5,7 +5,7 @@
 module GlueLib
   # Glue instance to other instance.
   #
-  # Workaround for the SketchUp API CompoenntInstance#glued_to= not supporting
+  # Workaround for the SketchUp API ComponentInstance#glued_to= not supporting
   # other instances. Due to technical limitations, the persistent ID is lost for
   # the target.
   #
@@ -15,6 +15,8 @@ module GlueLib
   def self.glue(instances, target)
     # Wrap in array.
     instances = [*instances]
+
+    instances += glued_to(target)
 
     faces = instances.map do |instance|
       instance.definition.behavior.is2d = true # "is2d" = "gluable"
@@ -30,8 +32,6 @@ module GlueLib
       # It has to lie loosely in this drawing context though to be able to glue
       # to.
       face = instance.parent.entities.add_face(corners)
-
-      # TODO: Carry over any instances already glued to target.
       instance.glued_to = face
 
       face
@@ -50,5 +50,15 @@ module GlueLib
     target.erase!
     # TODO: Copy attributes.
     # TODO: Purge temp definition.
+  end
+
+  # Get all instances glued to an instance.
+  #
+  # @param instance [Sketchup::ComponentInstance]
+  #
+  # @return [Array<Sketchup::ComponentInstance>]
+  def self.glued_to(instance)
+    instance.parent.entities.grep(Sketchup::ComponentInstance)
+            .select { |c| c.glued_to == instance }
   end
 end
