@@ -68,6 +68,18 @@ module GlueLib
   ].freeze
   private_constant :CORNERS
 
+  # Copy attributes from one entity to another.
+  #
+  # @param target [Sketchup::Entity]
+  # @param reference [Sketchup::Entity]
+  def self.copy_attributes(target, reference)
+    # Entity#attribute_dictionaries returns nil instead of empty array, GAH!
+    (reference.attribute_dictionaries || []).each do |attr_dict|
+      attr_dict.each_pair { |k, v| target.set_attribute(attr_dict.name, k, v) }
+      copy_attributes(target.attribute_dictionaries[attr_dict.name], attr_dict)
+    end
+  end
+
   # Erase a single definition.
   #
   # @param definition [Sketchup::ComponentDefiniton]
@@ -84,6 +96,7 @@ module GlueLib
   end
   private_class_method :erase_definition
 
+
   # Copy component properties over from reference to a target, making target
   # mimic the reference.
   #
@@ -94,7 +107,7 @@ module GlueLib
     target.layer = reference.layer
     target.material = reference.material
     target.transformation = reference.transformation
-    # TODO: Copy attributes.
+    copy_attributes(target, reference)
   end
   private_class_method :mimic
 end
